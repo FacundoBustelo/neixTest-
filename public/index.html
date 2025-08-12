@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>neixTest</title>
+  <link rel="stylesheet" href="/assets/styles.css?v=3">
+</head>
+<body>
+<div class="container">
+  <header class="site-header">
+    <img src="/assets/NEIX_logo.jpg" alt="NEIX — Inteligencia Financiera" class="site-logo">
+  </header>
+  <section id="loginSection">
+    <h2>Login</h2>
+    <form id="loginForm">
+      <label>Usuario <input id="username" required></label>
+      <label>Contraseña <input id="password" type="password" required></label>
+      <button type="submit">Ingresar</button>
+    </form>
+    <p class="hint">admin/admin123 · trader/trader123</p>
+  </section>
+
+  <section id="appSection" class="hidden">
+    <div class="topbar">
+      <div>Usuario: <span id="whoami"></span></div>
+      <div>
+        <button id="logoutBtn">Salir</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div class="tbl-header">
+          <h3>Instrumentos</h3>
+          <button id="sendAllBtn" class="btn-small" type="button">Enviar todas las configuraciones</button>
+        </div>
+        <table id="tbl">
+          <thead>
+            <tr>
+              <th>Símbolo</th>
+              <th>Precio (sim)</th>
+              <th>Qty mercado (sim)</th>
+              <th>Qty config</th>
+              <th>Objetivo</th>
+              <th>Side</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div>
+        <div class="tbl-header">
+          <h3>Notificaciones</h3>
+          <button id="clearNoticesBtn" class="btn-small" type="button">Limpiar</button>
+        </div>
+        <div id="notices" class="notices"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="/assets/app.js"></script>
+</body>
+</html>
