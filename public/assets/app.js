@@ -14,13 +14,25 @@ let socket = null;
 let username = null;
 let instruments = [];
 let configs = {};
-let lastAllPayload = null;
 
-function addNotice(type, msg) {
+function addNotice(type, msg, opts = {}) {
+  const { duration = 0 } = opts; // ms; 0 = permanece
   const div = document.createElement('div');
   div.className = 'notice ' + (type === 'ok' ? 'ok' : type === 'error' ? 'err' : 'info');
   div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-  qs('#notices').prepend(div);
+
+  const appVisible = !document.getElementById('appSection')?.classList.contains('hidden');
+  const box = appVisible ? document.getElementById('notices')
+                         : document.getElementById('noticesGlobal');
+
+  if (box) box.prepend(div);
+
+  if (duration > 0) {
+    setTimeout(() => {
+      div.classList.add('fade-out');
+      div.addEventListener('animationend', () => div.remove(), { once: true });
+    }, duration);
+  }
 }
 
 function flashRow(symbol, ok, errorMsg) {
@@ -96,8 +108,10 @@ async function saveOne(symbol) {
   try {
     await api('/api/config_save.php', { method: 'POST', body: JSON.stringify({ symbol, quantity: qty, target_price: target, side }) });
     addNotice('ok', `Configuración guardada para ${symbol}`);
+    flashRow(symbol, true);
   } catch (e) {
     addNotice('error', `Error guardando ${symbol}: ${e.message}`);
+    flashRow(symbol, false, e.message);
   }
 }
 
@@ -123,17 +137,30 @@ function connectWS() {
         });
       } else if (msg.type === 'ack_configs') {
         (msg.results || []).forEach(r => flashRow(r.symbol, !!r.ok, r.error));
-        addNotice('ok', 'Validación OK (WS). Guardando en BD…');
-        persistOkConfigs(msg);
-      } else if (msg.type === 'ack') { 
+        const okCount = (msg.results || []).filter(r => r.ok).length;
+        const errCount = (msg.results || []).length - okCount;
+        addNotice(errCount ? 'error' : 'ok', `WS: ${okCount} guardadas · ${errCount} con error`);
+        const btn = qs('#sendAllBtn');
+        if (btn) btn.disabled = false; // re-habilitar botón
+      } else if (msg.type === 'ack') {
         addNotice('ok', `ACK: ${msg.message}`);
       } else if (msg.type === 'error') {
         addNotice('error', msg.message);
+        const btn = qs('#sendAllBtn');
+        if (btn) btn.disabled = false;
       }
     };
 
-    socket.onclose = () => addNotice('error', 'WebSocket desconectado');
-    socket.onerror = () => addNotice('error', 'WS error');
+    socket.onclose = () => {
+      addNotice('error', 'WebSocket desconectado');
+      const btn = qs('#sendAllBtn');
+      if (btn) btn.disabled = false;
+    };
+    socket.onerror = () => {
+      addNotice('error', 'WS error');
+      const btn = qs('#sendAllBtn');
+      if (btn) btn.disabled = false;
+    };
   } catch {
     addNotice('error', 'No se pudo abrir WS');
   }
@@ -145,10 +172,10 @@ qs('#loginForm').addEventListener('submit', async (e) => {
   const p = qs('#password').value;
   try {
     await api('/api/login.php', { method: 'POST', body: JSON.stringify({ username: u, password: p }) });
-    addNotice('ok', 'Login OK');
+    addNotice('ok', 'Login OK', { duration: 3000 }); 
     await initApp();
   } catch {
-    addNotice('error', 'Login inválido');
+    addNotice('error', 'Login inválido', { duration: 3000 }); 
   }
 });
 
@@ -169,46 +196,23 @@ qs('#sendAllBtn').addEventListener('click', async () => {
     timestamp: Date.now(),
     configs: instruments.map(r => ({
       symbol: r.symbol,
-      target_price: parseFloat(qs(`[data-target="${r.symbol}"]`).value || '') || null,
-      quantity: parseFloat(qs(`[data-qty="${r.symbol}"]`).value || '') || null,
+      target_price: parseFloat(qs(`[data-target="${r.symbol}"]`).value || ''),
+      quantity: parseFloat(qs(`[data-qty="${r.symbol}"]`).value || ''),
       side: (qs(`[data-side="${r.symbol}"]`).value || "")
     }))
   };
-  lastAllPayload = payload;
 
   btn.disabled = true;
   try {
     addNotice('info', 'Enviando todas por WS…');
     socket.send(JSON.stringify(payload));
-  } finally {
+  } catch (e) {
+    btn.disabled = false;
+    addNotice('error', 'No se pudo enviar por WS: ' + e.message);
   }
 });
 
-async function persistOkConfigs(ack) {
-  const btn = qs('#sendAllBtn');
-  try {
-    const okSet = new Set((ack.results || []).filter(r => r.ok).map(r => r.symbol));
-    if (!lastAllPayload || okSet.size === 0) {
-      addNotice('info', 'Nada para guardar');
-      return;
-    }
-    const toSave = lastAllPayload.configs.filter(c => okSet.has(c.symbol));
-    const res = await api('/api/config_bulk_save.php', {
-      method: 'POST',
-      body: JSON.stringify({ configs: toSave })
-    });
-    addNotice('ok', `Guardados: ${res.saved?.length || 0} · Errores: ${res.errors?.length || 0}`);
-    if (res.errors?.length) {
-      res.errors.forEach(e => flashRow(e.symbol || '*', false, e.error || 'error'));
-    }
-  } catch (e) {
-    addNotice('error', 'Error guardando en BD: ' + e.message);
-  } finally {
-    lastAllPayload = null;
-    btn.disabled = false;
-  }
-}
-
+// Botón para limpiar notificaciones (si existe en el HTML)
 const clearBtn = document.getElementById('clearNoticesBtn');
 if (clearBtn) {
   clearBtn.addEventListener('click', () => {

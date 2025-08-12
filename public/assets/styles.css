@@ -41,7 +41,23 @@ th, td { padding: 8px; border-bottom: 1px solid #334155; text-align: left; }
 @media (max-width: 480px) {
     .site-logo { height: 44px; }
   }
-
+  .notices-global {
+    max-height: 140px;     /* más bajito para login */
+    overflow: auto;
+  }
+  .notice.fade-out {
+    animation: noticeFadeOut 300ms ease forwards;
+  }
+  
+  @keyframes noticeFadeOut {
+    to {
+      opacity: 0;
+      transform: translateY(-4px);
+      height: 0;
+      margin: 0;
+      padding: 0;
+    }
+  }
 /* Feedback por instrumento */
 .sent-ok  { animation: flashOk 4s ease both; }
 .sent-err { animation: flashErr 4s ease both; }
@@ -63,9 +79,6 @@ th, td { padding: 8px; border-bottom: 1px solid #334155; text-align: left; }
 .tbl-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .btn-small { padding: 6px 10px; font-size: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f1a2a; color: #e2e8f0; cursor: pointer; }
 .btn-small:hover { filter: brightness(1.15); }
-
-/* Caja de notificaciones: alto fijo + scroll interno */
-.notices { height: 360px; overflow: auto; scrollbar-gutter: stable both-edges; }
 
 /* Responsive: en móvil, una sola columna y un alto un poco menor */
 @media (max-width: 900px) {
