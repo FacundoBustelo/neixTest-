@@ -1,4 +1,5 @@
 name: neixtest
+
 services:
   nginx:
     image: nginx:1.27-alpine
@@ -23,7 +24,7 @@ services:
       - ./app:/var/www/app
       - ./public:/var/www/public
       - ./composer.json:/var/www/composer.json:ro
-      - ./vendor:/var/www/vendor
+      - vendor_data:/var/www/vendor
     environment:
       - PHP_OPCACHE_VALIDATE_TIMESTAMPS=1
       - DB_HOST=db
@@ -45,7 +46,7 @@ services:
     volumes:
       - ./app:/var/www/app
       - ./composer.json:/var/www/composer.json:ro
-      - ./vendor:/var/www/vendor
+      - vendor_data:/var/www/vendor
     depends_on:
       - db
     networks:
@@ -75,6 +76,7 @@ services:
 
 volumes:
   dbdata:
+  vendor_data:
 
 networks:
   neixnet:
