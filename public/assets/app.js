@@ -120,7 +120,7 @@ async function saveOne(symbol) {
 function connectWS() {
   try {
     if (socket && socket.readyState === 1) socket.close();
-    socket = new WebSocket('ws://localhost:8080');
+    socket = new WebSocket(WS_URL);
 
     socket.onopen = () => {
       addNotice('info', 'WebSocket conectado');
