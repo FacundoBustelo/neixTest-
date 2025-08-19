@@ -1,4 +1,6 @@
 // public/assets/app.js
+const WS_PATH = '/ws';
+const WS_URL  = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + WS_PATH;
 const qs = s => document.querySelector(s);
 const api = async (url, opts = {}) => {
   const res = await fetch(url, { credentials: 'include', headers: { 'Content-Type': 'application/json' }, ...opts });
